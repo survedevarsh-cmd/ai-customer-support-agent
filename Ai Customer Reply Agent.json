@@ -12,6 +12,9 @@
         },
         "filters": {
           "q": "is:unread"
+        },
+        "options": {
+          "markMessagesAsRead": true
         }
       },
       "type": "n8n-nodes-base.gmailTrigger",
@@ -32,7 +35,7 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "=You are a professional customer support agent. \nBefore responding, always use the 'Postgres DB Lookup' tool to search for the customer's information or relevant FAQ answers using the email details.\nRead the email below and write a polite, helpful reply based on the database information. Do not include subject lines, just raw email body.\nCustomer Email:  {{ .snippet }}",
+        "text": "=You are a professional customer support agent. \nBefore responding, always use the 'Postgres DB Lookup' tool to search for the customer's information or relevant FAQ answers using the email details.\nRead the email below and write a polite, helpful reply based on the database information. Do not include subject lines, just raw email body.\nCustomer Email:  {{ $json.textPlain }}",
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -68,7 +71,9 @@
         "resource": "draft",
         "subject": "Re: ",
         "message": "=Message:  {{ $json.output }}",
-        "options": {}
+        "options": {
+          "threadId": "={{ $(\"Gmail Trigger\").item.json.threadId }}"
+        }
       },
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.2,
@@ -115,7 +120,7 @@
           "parameters": [
             {
               "name": "query",
-              "value": "={{ ('query', 'The search query or customer email to look up') }}"
+              "value": "={{ $fromAI(\"query\") }}"
             }
           ]
         },
