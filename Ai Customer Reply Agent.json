@@ -1,0 +1,206 @@
+{
+  "name": "Ai Customer Reply Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {
+          "q": "is:unread"
+        }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "a8400fa8-7cd6-4e41-8ec6-65a3b4aec50c",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "lIhdCvLg8ycDeM0i",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a professional customer support agent. \nBefore responding, always use the 'Postgres DB Lookup' tool to search for the customer's information or relevant FAQ answers using the email details.\nRead the email below and write a polite, helpful reply based on the database information. Do not include subject lines, just raw email body.\nCustomer Email:  {{ .snippet }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        144,
+        48
+      ],
+      "id": "c492608d-4eb3-4a49-bbb8-919db9375c6b",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        16,
+        256
+      ],
+      "id": "6a1d9d15-c293-402d-b16a-b899057c503c",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "pTpn4MIwE6BZZa1W",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "Re: ",
+        "message": "=Message:  {{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        368,
+        48
+      ],
+      "id": "7e1550b7-7836-45f4-a0cf-c3efe1012060",
+      "name": "Create a draft",
+      "webhookId": "f10364d4-c35c-43e5-bbe9-8f9477a37db7",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "lIhdCvLg8ycDeM0i",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.1,
+      "position": [
+        144,
+        -150
+      ],
+      "id": "24104102-8129-4941-b92c-a9cc9e7a898d",
+      "name": "Window Buffer Memory"
+    },
+    {
+      "parameters": {
+        "url": "https://api.yourdatabase.com/postgres-lookup",
+        "method": "POST",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_TOKEN"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "={{ ('query', 'The search query or customer email to look up') }}"
+            }
+          ]
+        },
+        "name": "Postgres_DB_Lookup",
+        "description": "Call this tool to search the Postgres database for customer information. Pass the search query or customer email as exactly needed."
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1,
+      "position": [
+        144,
+        250
+      ],
+      "id": "7120a625-0bab-43a6-b8a6-a133abccd8f3",
+      "name": "Postgres DB Lookup"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Create a draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Window Buffer Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres DB Lookup": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "aba5e193-bc4f-4b83-8909-e8075606315d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "10caf9c2ab3ea70ba9d4870a28fcfc896dedfaac394298c237d79750e061b686"
+  },
+  "id": "OaI6BiKUHbnsTudl",
+  "tags": []
+}
